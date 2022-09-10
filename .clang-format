@@ -1,0 +1,42 @@
+# -*- yaml -*-
+# git ls-files -i -x '*.[ch]' | xargs clang-format -i
+---
+Language:		Cpp
+# BasedOnStyle:  LLVM
+
+# true would be better here. but it's bugged in combination with
+# "PointerAlignment: Right" which we also use as is more important
+AlignConsecutiveDeclarations: false
+AlignEscapedNewlines: Right
+AllowShortFunctionsOnASingleLine: None
+AlwaysBreakAfterDefinitionReturnType: true
+BreakBeforeBraces: Allman
+BreakBeforeTernaryOperators: false
+BreakConstructorInitializersBeforeComma: true
+BreakStringLiterals: false
+ColumnLimit:	79
+ForEachMacros:
+  - foreach
+  - forboth
+  - dlist_foreach
+  - dlist_foreach_modify
+  - slist_foreach
+  - slist_foreach_modify
+IncludeBlocks:		Preserve
+IncludeCategories: # c.h and postgres.h should be first
+  - Regex:           '.*'
+    Priority:        1
+  - Regex:            '^<c\.h>'
+    Priority:        -1
+  - Regex:            '^<postgres\.h>'
+    Priority:        -1
+IndentCaseLabels: true
+IndentWidth:	4
+MacroBlockBegin: "PG_TRY();|PG_CATCH();"
+MacroBlockEnd:   "PG_END_TRY();"
+MaxEmptyLinesToKeep: 3
+PointerAlignment: Right
+SpaceAfterCStyleCast: true
+TabWidth:		4
+UseTab:         Always
+...
