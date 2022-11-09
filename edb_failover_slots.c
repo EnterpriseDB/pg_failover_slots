@@ -72,7 +72,7 @@ typedef enum FailoverSlotFilterKey
 typedef struct FailoverSlotFilter
 {
 	FailoverSlotFilterKey key;
-	char *val; /* eg: pglogical_output */
+	char *val; /* eg: test_decoding */
 } FailoverSlotFilter;
 
 /* Used for physical-before-logical ordering */
@@ -1119,7 +1119,7 @@ skip_standby_slot_names(XLogRecPtr commit_lsn)
 	/*
 	 * If we already know all slots of interest satisfy the requirement we can
 	 * skip checks entirely. The assignment hook for
-	 * pglogical.standby_slot_names invalidates the cache.
+	 * edb_failover_slots.standby_slot_names invalidates the cache.
 	 */
 	if (edb_standby_slot_names_oldest_flush_lsn >= commit_lsn ||
 		edb_standby_slots_min_confirmed == 0 ||
@@ -1157,16 +1157,16 @@ wait_for_standby_confirmation(XLogRecPtr commit_lsn)
 		if (edb_standby_slots_min_confirmed == -1)
 		{
 			/*
-			 * Default pglogical.standby_slots_min_confirmed (-1) is to wait
-			 * for all entries in pglogical.standby_slot_names.
+			 * Default edb_failover_slots.standby_slots_min_confirmed (-1) is to wait
+			 * for all entries in edb_failover_slots.standby_slot_names.
 			 */
 			wait_slots_remaining = list_length(edb_standby_slot_names);
 		}
 		else
 		{
 			/*
-			 * pglogical.standby_slots_min_confirmed cannot wait for more slots
-			 * than are named in the pglogical.standby_slot_names.
+			 * edb_failover_slots.standby_slots_min_confirmed cannot wait for more slots
+			 * than are named in the edb_failover_slots.standby_slot_names.
 			 */
 			wait_slots_remaining = Min(edb_standby_slots_min_confirmed,
 									   list_length(edb_standby_slot_names));
