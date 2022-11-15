@@ -11,6 +11,8 @@ This extension does the following:
 - ensure that selected standbys receive data before any of the logical slot
   walsenders can send data to consumers
 
+PostgreSQL 11 on higher is required.
+
 ## Configuration options
 
 The extension itself must be added to `shared_preload_libraries` on both the

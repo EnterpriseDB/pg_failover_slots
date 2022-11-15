@@ -20,7 +20,9 @@
 #include "catalog/pg_database.h"
 
 #include "postmaster/bgworker.h"
+#if PG_VERSION_NUM >= 130000
 #include "postmaster/interrupt.h"
+#endif
 
 #include "replication/decode.h"
 #include "replication/logical.h"
@@ -47,6 +49,11 @@
 #include "libpq/libpq.h"
 
 PG_MODULE_MAGIC;
+
+#if PG_VERSION_NUM < 130000
+#define SignalHandlerForConfigReload PostgresSigHupHandler
+#define GetWalRcvFlushRecPtr GetWalRcvWriteRecPtr
+#endif
 
 #define EXTENSION_NAME "edb_failover_slots"
 #define WORKER_NAP_TIME 60000L
