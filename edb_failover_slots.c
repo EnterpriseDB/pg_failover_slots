@@ -35,6 +35,7 @@
 
 #include "tcop/tcopprot.h"
 
+#include "utils/builtins.h"
 #include "utils/fmgroids.h"
 #include "utils/fmgrprotos.h"
 #include "utils/guc.h"
@@ -64,6 +65,7 @@ typedef struct RemoteSlot
 	char *name;
 	char *plugin;
 	char *database;
+	bool two_phase;
 	XLogRecPtr restart_lsn;
 	XLogRecPtr confirmed_lsn;
 	TransactionId catalog_xmin;
@@ -247,11 +249,22 @@ remote_get_primary_slot_info(PGconn *conn, List *slot_filter)
 	StringInfoData query;
 
 	initStringInfo(&query);
-	appendStringInfoString(
-		&query,
-		"SELECT slot_name, plugin, database, catalog_xmin, restart_lsn, confirmed_flush_lsn"
-		"  FROM pg_catalog.pg_replication_slots"
-		" WHERE database IS NOT NULL AND (");
+	if (PQserverVersion(conn) >= 140000)
+	{
+		appendStringInfoString(
+			&query,
+			"SELECT slot_name, plugin, database, two_phase, catalog_xmin, restart_lsn, confirmed_flush_lsn"
+			"  FROM pg_catalog.pg_replication_slots"
+			" WHERE database IS NOT NULL AND (");
+	}
+	else
+	{
+		appendStringInfoString(
+			&query,
+			"SELECT slot_name, plugin, database, false AS two_phase, catalog_xmin, restart_lsn, confirmed_flush_lsn"
+			"  FROM pg_catalog.pg_replication_slots"
+			" WHERE database IS NOT NULL AND (");
+	}
 
 	foreach (lc, slot_filter)
 	{
@@ -298,18 +311,19 @@ remote_get_primary_slot_info(PGconn *conn, List *slot_filter)
 		slot->name = pstrdup(PQgetvalue(res, i, 0));
 		slot->plugin = pstrdup(PQgetvalue(res, i, 1));
 		slot->database = pstrdup(PQgetvalue(res, i, 2));
-		slot->catalog_xmin = !PQgetisnull(res, i, 3) ?
-								 atoi(PQgetvalue(res, i, 3)) :
+		parse_bool(PQgetvalue(res, i, 3), &slot->two_phase);
+		slot->catalog_xmin = !PQgetisnull(res, i, 4) ?
+								 atoi(PQgetvalue(res, i, 4)) :
 								 InvalidTransactionId;
 		slot->restart_lsn =
-			!PQgetisnull(res, i, 4) ?
-				DatumGetLSN(DirectFunctionCall1(
-					pg_lsn_in, CStringGetDatum(PQgetvalue(res, i, 4)))) :
-				InvalidXLogRecPtr;
-		slot->confirmed_lsn =
 			!PQgetisnull(res, i, 5) ?
 				DatumGetLSN(DirectFunctionCall1(
 					pg_lsn_in, CStringGetDatum(PQgetvalue(res, i, 5)))) :
+				InvalidXLogRecPtr;
+		slot->confirmed_lsn =
+			!PQgetisnull(res, i, 6) ?
+				DatumGetLSN(DirectFunctionCall1(
+					pg_lsn_in, CStringGetDatum(PQgetvalue(res, i, 6)))) :
 				InvalidXLogRecPtr;
 
 		slots = lappend(slots, slot);
@@ -733,10 +747,10 @@ synchronize_one_slot(PGconn *conn, RemoteSlot *remote_slot)
 		/*
 		 * We have to create the slot to reserve its name and resources, but
 		 * don't want it to persist if we fail.
-		 * TODO: support 2PC slots properly.
 		 */
 #if PG_VERSION_NUM >= 140000
-		ReplicationSlotCreate(remote_slot->name, true, RS_EPHEMERAL, false);
+		ReplicationSlotCreate(remote_slot->name, true, RS_EPHEMERAL,
+							  remote_slot->two_phase);
 #else
 		ReplicationSlotCreate(remote_slot->name, true, RS_EPHEMERAL);
 #endif
