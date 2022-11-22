@@ -1410,7 +1410,7 @@ _PG_init(void)
 		"edb_failover_slots.primary_dsn",
 		"connection string to the primary server for synchronization logical slots on standby",
 		"if empty, uses the defaults to primary_conninfo",
-		&edb_failover_slots_dsn, "", PGC_SIGHUP, 0, NULL, NULL, NULL);
+		&edb_failover_slots_dsn, "", PGC_SIGHUP, GUC_SUPERUSER_ONLY, NULL, NULL, NULL);
 
 
 	if (IsBinaryUpgrade)
