@@ -10,7 +10,13 @@
 #include "pgstat.h"
 
 #include "access/genam.h"
+#if PG_VERSION_NUM >= 120000
 #include "access/table.h"
+#else
+#include "access/heapam.h"
+#define table_open heap_open
+#define table_close heap_close
+#endif
 #include "access/xact.h"
 #if PG_VERSION_NUM >= 150000
 #include "access/xlogrecovery.h"
@@ -1350,7 +1356,11 @@ edb_socket_putmessage_noblock(char msgtype, const char *s, size_t len)
 	OldPqCommMethods->putmessage_noblock(msgtype, s, len);
 }
 
-static const PQcommMethods PqCommSocketMethods = {
+static
+#if PG_VERSION_NUM >= 120000
+const
+#endif
+PQcommMethods PqCommSocketMethods = {
 	edb_socket_comm_reset,		  edb_socket_flush,
 	edb_socket_flush_if_writable, edb_socket_is_send_pending,
 	edb_socket_putmessage,		  edb_socket_putmessage_noblock};
