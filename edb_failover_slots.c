@@ -55,6 +55,8 @@
 #include "libpq/auth.h"
 #include "libpq/libpq.h"
 
+#define EDB_FAILOVER_SLOTS_VERSION "0.1.0"
+
 PG_MODULE_MAGIC;
 
 #if PG_VERSION_NUM < 130000
@@ -103,6 +105,8 @@ char *edb_failover_slot_names;
 static char *edb_failover_slot_names_str = NULL;
 static List *edb_failover_slot_names_list = NIL;
 static bool edb_failover_slots_drop = true;
+
+char *edb_failover_slots_version_str;
 
 void _PG_init(void);
 void edb_failover_slots_main(Datum main_arg);
@@ -1390,6 +1394,12 @@ _PG_init(void)
 
 	if (!process_shared_preload_libraries_in_progress)
 		elog(ERROR, "edb_failover_slots is not in shared_preload_libraries");
+
+	DefineCustomStringVariable(
+		"edb_failover_slots.version",
+		"edb_failover_slots module version", "",
+		&edb_failover_slots_version_str, EDB_FAILOVER_SLOTS_VERSION, PGC_INTERNAL,
+		GUC_NOT_IN_SAMPLE | GUC_DISALLOW_IN_FILE, NULL, NULL, NULL);
 
 	DefineCustomStringVariable(
 		"edb_failover_slots.standby_slot_names",
