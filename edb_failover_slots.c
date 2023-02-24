@@ -109,7 +109,7 @@ static bool edb_failover_slots_drop = true;
 char *edb_failover_slots_version_str;
 
 void _PG_init(void);
-void edb_failover_slots_main(Datum main_arg);
+PGDLLEXPORT void edb_failover_slots_main(Datum main_arg);
 
 static bool
 edb_check_failover_slot_names(char **newval, void **extra, GucSource source)
