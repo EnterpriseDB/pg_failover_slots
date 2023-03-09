@@ -76,37 +76,33 @@ regression_slot4]);
 my $primary_lsn = $node_primary->lsn('write');
 $node_primary->wait_for_catchup($node_standby, 'replay', $primary_lsn);
 
-# Test to drop one of the replication slot
-$node_primary->safe_psql('postgres',
-	"SELECT pg_drop_replication_slot('regression_slot4')");
-
+# failover to standby
 $node_primary->stop;
-$node_primary->start;
+$node_standby->promote;
 
-$node_primary->stop;
-my $datadir           = $node_primary->data_dir;
-my $slot3_replslotdir = "$datadir/pg_replslot/regression_slot3";
+# Check that slots are on promoted standby
+is($node_standby->safe_psql('postgres', "SELECT slot_name FROM pg_replication_slots ORDER BY slot_name"), q[regression_slot1
+regression_slot2
+regression_slot3
+regression_slot4]);
 
-rmtree($slot3_replslotdir);
+# Write on promoted standby
+$node_standby->safe_psql('postgres', "INSERT INTO test_repl_stat DEFAULT VALUES;");
 
-$node_primary->append_conf('postgresql.conf', 'max_replication_slots = 3');
-$node_primary->start;
-
-# cleanup
-$node_primary->safe_psql('postgres',
-	"SELECT pg_drop_replication_slot('regression_slot1')");
-$node_primary->safe_psql('postgres', "DROP TABLE test_repl_stat");
-
-# Wait for replication to catch up
-$primary_lsn = $node_primary->lsn('write');
-$node_primary->wait_for_catchup($node_standby, 'replay', $primary_lsn);
-
-# Check that the slots were dropped on standby too
-$node_standby->poll_query_until('postgres', "SELECT count(*) < 2 FROM pg_replication_slots");
-is($node_standby->safe_psql('postgres', "SELECT slot_name FROM pg_replication_slots ORDER BY slot_name"), q[regression_slot2]);
+# Check that slots are consumable on promoted stanby
+$node_standby->safe_psql(
+	'postgres', qq[
+	SELECT data FROM pg_logical_slot_get_changes('regression_slot1', NULL,
+		NULL, 'include-xids', '0', 'skip-empty-xacts', '1');
+	SELECT data FROM pg_logical_slot_get_changes('regression_slot2', NULL,
+		NULL, 'include-xids', '0', 'skip-empty-xacts', '1');
+	SELECT data FROM pg_logical_slot_get_changes('regression_slot3', NULL,
+		NULL, 'include-xids', '0', 'skip-empty-xacts', '1');
+	SELECT data FROM pg_logical_slot_get_changes('regression_slot4', NULL,
+		NULL, 'include-xids', '0', 'skip-empty-xacts', '1');
+]);
 
 # shutdown
 $node_standby->stop;
-$node_primary->stop;
 
 done_testing();
