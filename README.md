@@ -13,6 +13,54 @@ This extension does the following:
 
 PostgreSQL 11 on higher is required.
 
+## How to check the standby is ready
+
+The slots are not synchronized to the standby immediately, because of
+consistency reasons. The standby can be too behind logical slots, or too ahead
+of logical slots on primary when the edb_failover_slots extension is activated,
+so the extension does verification and only synchronizes slots when it's
+actually safe.
+
+This, however brings a need to verify that the slots are synchronized and
+that the standby is actually ready to be a failover target with consistent
+logical decoding for all slots. This only needs to be done initially, once
+the slots are synchronized the first time, they will always be consistent as
+long as the extension is active in the cluster.
+
+The check for whether slots are fully synchronized with primary is relatively
+simple. The slots just need to be present in `pg_replication_slots` view on
+standby and have `active` state `false`. An `active` state `true` means the
+slots is currently being initialized.
+
+For example consider the following psql session:
+
+```psql
+# SELECT slot_name, active FROM pg_replication_slots WHERE slot_type = 'logical';
+    slot_name    | active
+-----------------+--------
+regression_slot1 | f
+regression_slot2 | f
+regression_slot3 | t
+```
+
+This means that slots `regression_slot1` and `regression_slot2` are synchronized
+from primary to standby and `regression_slot3` is still being synchronized. If
+failover happens at this stage, the `regression_slot3` will be lost.
+
+Now let's wait a little and query again:
+
+```psql
+# SELECT slot_name, active FROM pg_replication_slots WHERE slot_type = 'logical';
+    slot_name    | active
+-----------------+--------
+regression_slot1 | f
+regression_slot2 | f
+regression_slot3 | f
+```
+
+Now all the the three slots are synchronized and the standby can be used
+for failover without losing logical decoding state for any of them.
+
 ## Configuration options
 
 The extension itself must be added to `shared_preload_libraries` on both the
