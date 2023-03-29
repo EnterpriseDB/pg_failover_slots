@@ -1,0 +1,12 @@
+tmp_check*/
+*~
+*.swo
+*.swp
+*.o
+*.so
+*.gcov
+*.gcov.out
+*.gcda
+*.gcno
+*.bc
+.DS_Store

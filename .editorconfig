@@ -1,0 +1,10 @@
+root = true
+
+[*.{c,h,pl,pm}]
+indent_style = tab
+indent_size = tab
+tab_width = 4
+
+[*.{sql,md,yml}]
+indent_style = space
+indent_size = 2
