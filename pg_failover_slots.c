@@ -114,7 +114,7 @@ static bool pg_failover_slots_drop = true;
 char *pg_failover_slots_version_str;
 
 void _PG_init(void);
-void pg_failover_slots_main(Datum main_arg);
+PGDLLEXPORT void pg_failover_slots_main(Datum main_arg);
 
 static bool
 check_failover_slot_names(char **newval, void **extra, GucSource source)
@@ -523,7 +523,7 @@ remote_connect(const char *connstr, const char *appname)
 }
 
 
-/**
+/*
  * Wait for remote slot to pass locally reserved position.
  *
  * Wait until the slot named in 'remote_slot' on the host at 'conn' has all its
@@ -648,7 +648,7 @@ wait_for_primary_slot_catchup(ReplicationSlot *slot, RemoteSlot *remote_slot)
 	}
 }
 
-/**
+/*
  * Synchronize one logical replication slot's state from the master to this
  * standby, creating it if necessary.
  *
@@ -662,7 +662,7 @@ wait_for_primary_slot_catchup(ReplicationSlot *slot, RemoteSlot *remote_slot)
  * below ours after the initial setup period.
  */
 static void
-synchronize_one_slot(PGconn *conn, RemoteSlot *remote_slot)
+synchronize_one_slot(RemoteSlot *remote_slot)
 {
 	int i;
 	bool found = false;
@@ -1052,7 +1052,7 @@ synchronize_failover_slots(long sleep_time)
 		if (remote_slot->restart_lsn > lsn)
 			remote_slot->restart_lsn = lsn;
 
-		synchronize_one_slot(conn, remote_slot);
+		synchronize_one_slot(remote_slot);
 		nslots++;
 	}
 
@@ -1307,8 +1307,8 @@ wait_for_standby_confirmation(XLogRecPtr commit_lsn)
 	}
 }
 
-/**
- * Hackery to inject ourselves into walsender's logical strream starts here
+/*
+ * Hackery to inject ourselves into walsender's logical stream starts here
  */
 static const PQcommMethods *OldPqCommMethods;
 
