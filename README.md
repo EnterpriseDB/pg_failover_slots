@@ -61,6 +61,16 @@ regression_slot3 | f
 Now all the the three slots are synchronized and the standby can be used
 for failover without losing logical decoding state for any of them.
 
+## Prerequisite settings
+
+The extension throws hard errors if the following settings are not adjusted:
+
+- `hot_standby_feedback` should be `on`
+- `primary_slot_name` should be non-empty
+
+These are necessary to connect to the primary so it can send the xmin and
+catalog_xmin separately over hot_standby_feedback.
+
 ## Configuration options
 
 The extension itself must be added to `shared_preload_libraries` on both the
