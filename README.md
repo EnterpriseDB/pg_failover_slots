@@ -1,8 +1,8 @@
 # pg_failover_slots
 
-PG Failover Slots is for anyone with Logical Replication publications on Postgres databases that are also part of a Streaming Replication architecture.
+PG Failover Slots is for anyone with Logical Replication Slots on Postgres databases that are also part of a Physical Streaming Replication architecture.
 
-PG Failover Slots (pg_failover_slots) is an extension released as open source software under the PostgreSQL LICENSE. If you have logical replication publications on Postgres databases that are also part of a streaming replication architecture, PG Failover Slots avoids the need for you to reseed your logical replication tables when a new standby gets promoted to primary.
+Since logical replication slots are only maintained on the primary node, downstream subscribers don't receive any new changes from a newly promoted primary until the slot is created, which is unsafe because the information that includes which data a subscriber has confirmed receiving and which log data still needs to be retained for the subscriber will have been lost, resulting in an unknown gap in data changes. PG Failover Slots makes logical replication slots usable across a physical failover using the following features:
 
 Since the replication slot used by logical replication is only maintained on the primary node, downstream subscribers don't receive any new changes from the newly promoted primary until the slot is created on the newly promoted primary. Picking up logical replication changes from the newly promoted standby is unsafe because the information that includes which data a subscriber has confirmed receiving and which log data still needs to be retained for the subscriber will have been lost, resulting in an unknown gap in data. PG Failover Slots makes logical replication slots usable across a physical failover using the following features:
 
