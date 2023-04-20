@@ -4,8 +4,6 @@ PG Failover Slots is for anyone with Logical Replication Slots on Postgres datab
 
 Since logical replication slots are only maintained on the primary node, downstream subscribers don't receive any new changes from a newly promoted primary until the slot is created, which is unsafe because the information that includes which data a subscriber has confirmed receiving and which log data still needs to be retained for the subscriber will have been lost, resulting in an unknown gap in data changes. PG Failover Slots makes logical replication slots usable across a physical failover using the following features:
 
-Since the replication slot used by logical replication is only maintained on the primary node, downstream subscribers don't receive any new changes from the newly promoted primary until the slot is created on the newly promoted primary. Picking up logical replication changes from the newly promoted standby is unsafe because the information that includes which data a subscriber has confirmed receiving and which log data still needs to be retained for the subscriber will have been lost, resulting in an unknown gap in data. PG Failover Slots makes logical replication slots usable across a physical failover using the following features:
-
 - Copies any missing replication slots from the primary to the standby
 - Removes any slots from the standby that aren't found on the primary
 - Periodically synchronizes the position of slots on the standby based on the primary
