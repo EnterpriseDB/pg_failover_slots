@@ -77,7 +77,7 @@ while (1) {
 is($node_standby->safe_psql('postgres', "SELECT slot_name FROM pg_replication_slots ORDER BY slot_name"), q[regression_slot1
 regression_slot2
 regression_slot3
-regression_slot4]);
+regression_slot4], 'all slots synced');
 
 # Wait for replication to catch up
 my $primary_lsn = $node_primary->lsn('write');
@@ -91,7 +91,7 @@ $node_standby->promote;
 is($node_standby->safe_psql('postgres', "SELECT slot_name FROM pg_replication_slots ORDER BY slot_name"), q[regression_slot1
 regression_slot2
 regression_slot3
-regression_slot4]);
+regression_slot4], 'slots are on promoted standby');
 
 # Write on promoted standby
 $node_standby->safe_psql('postgres', "INSERT INTO test_repl_stat DEFAULT VALUES;");
