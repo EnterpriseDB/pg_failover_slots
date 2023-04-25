@@ -77,7 +77,7 @@ while (1) {
 is($node_standby->safe_psql('postgres', "SELECT slot_name FROM pg_replication_slots ORDER BY slot_name"), q[regression_slot1
 regression_slot2
 regression_slot3
-regression_slot4]);
+regression_slot4], 'all slots synced');
 
 # Wait for replication to catch up
 my $primary_lsn = $node_primary->lsn('write');
@@ -110,7 +110,7 @@ $node_primary->wait_for_catchup($node_standby, 'replay', $primary_lsn);
 
 # Check that the slots were dropped on standby too
 $node_standby->poll_query_until('postgres', "SELECT count(*) < 2 FROM pg_replication_slots");
-is($node_standby->safe_psql('postgres', "SELECT slot_name FROM pg_replication_slots ORDER BY slot_name"), q[regression_slot2]);
+is($node_standby->safe_psql('postgres', "SELECT slot_name FROM pg_replication_slots ORDER BY slot_name"), q[regression_slot2], 'all slots were dropped on standby too');
 
 # shutdown
 $node_standby->stop;

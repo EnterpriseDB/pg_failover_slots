@@ -80,7 +80,7 @@ $offset = $node_primary->wait_for_log(
         0);
 
 # And subscriber should have nothing
-is($node_subscriber->safe_psql('postgres', "SELECT * FROM test_repl_stat"), "");
+is($node_subscriber->safe_psql('postgres', "SELECT * FROM test_repl_stat"), "", 'subscriber has nothing');
 
 # Start standby
 $node_standby->start;
