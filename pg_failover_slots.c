@@ -1365,7 +1365,7 @@ socket_putmessage_noblock(char msgtype, const char *s, size_t len)
 	OldPqCommMethods->putmessage_noblock(msgtype, s, len);
 }
 
-#if PG_VERSION_NUM < 130000
+#if PG_VERSION_NUM < 140000
 static void
 socket_startcopyout(void)
 {
@@ -1388,7 +1388,7 @@ static
 	PQcommMethods PqCommSocketMethods = {
 		socket_comm_reset,		socket_flush,	   socket_flush_if_writable,
 		socket_is_send_pending, socket_putmessage, socket_putmessage_noblock
-#if PG_VERSION_NUM < 130000
+#if PG_VERSION_NUM < 140000
 		, socket_startcopyout, socket_endcopyout
 #endif
 	};
