@@ -1365,6 +1365,21 @@ socket_putmessage_noblock(char msgtype, const char *s, size_t len)
 	OldPqCommMethods->putmessage_noblock(msgtype, s, len);
 }
 
+#if PG_VERSION_NUM < 130000
+static void
+socket_startcopyout(void)
+{
+	OldPqCommMethods->startcopyout();
+}
+
+static void
+socket_endcopyout(bool errorAbort)
+{
+	OldPqCommMethods->endcopyout(errorAbort);
+}
+#endif
+
+
 #if PG_VERSION_NUM >= 120000
 static const
 #else
@@ -1372,7 +1387,11 @@ static
 #endif
 	PQcommMethods PqCommSocketMethods = {
 		socket_comm_reset,		socket_flush,	   socket_flush_if_writable,
-		socket_is_send_pending, socket_putmessage, socket_putmessage_noblock};
+		socket_is_send_pending, socket_putmessage, socket_putmessage_noblock
+#if PG_VERSION_NUM < 130000
+		, socket_startcopyout, socket_endcopyout
+#endif
+	};
 
 static ClientAuthentication_hook_type original_client_auth_hook = NULL;
 
