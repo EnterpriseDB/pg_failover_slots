@@ -31,7 +31,14 @@ my $node_standby = PostgreSQL::Test::Cluster->new('standby_1');
 $node_standby->init_from_backup($node_primary, $backup_name,
         has_streaming => 1);
 $node_standby->append_conf('postgresql.conf', 'hot_standby_feedback = on');
-$node_standby->append_conf('postgresql.conf', 'primary_slot_name = standby_1');
+
+my $pg_version = `pg_config --version | awk '{print \$2}'`;
+if ($pg_version >= 12) {
+	$node_standby->append_conf('postgresql.conf', 'primary_slot_name = standby_1');
+}
+else {
+	$node_standby->append_conf('recovery.conf', 'primary_slot_name = standby_1');
+}
 
 # Create table.
 $node_primary->safe_psql('postgres', "CREATE TABLE test_repl_stat(col1 int)");
@@ -43,7 +50,7 @@ $node_subscriber->start;
 
 $node_subscriber->safe_psql('postgres', "CREATE TABLE test_repl_stat(col1 int)");
 
-my $node_primary_connstr = $node_primary->connstr . ' dbname=postgres';
+my $node_primary_connstr = $node_primary->connstr . ' dbname=postgres application_name=tap_sub';
 $node_primary->safe_psql('postgres', "CREATE PUBLICATION tap_pub FOR ALL TABLES");
 $node_subscriber->safe_psql('postgres',
         "CREATE SUBSCRIPTION tap_sub CONNECTION '$node_primary_connstr' PUBLICATION tap_pub"
