@@ -4,6 +4,7 @@ tmp_check*/
 *.swp
 *.o
 *.so
+*.dylib
 *.gcov
 *.gcov.out
 *.gcda

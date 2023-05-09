@@ -9,7 +9,7 @@ Since logical replication slots are only maintained on the primary node, downstr
 - Periodically synchronizes the position of slots on the standby based on the primary
 - Ensures that selected standbys receive data before any of the logical slot walsenders can send data to consumers
 
-PostgreSQL 11 on higher is required.
+PostgreSQL 11 or higher is required.
 
 ## How to check the standby is ready
 

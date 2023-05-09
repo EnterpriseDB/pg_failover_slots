@@ -936,7 +936,6 @@ synchronize_failover_slots(long sleep_time)
 		for (i = 0; i < max_replication_slots; i++)
 		{
 			ReplicationSlot *s = &ReplicationSlotCtl->replication_slots[i];
-			ListCell *lc;
 			bool active;
 			bool found = false;
 
