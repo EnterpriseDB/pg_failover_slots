@@ -168,3 +168,23 @@ Controls how many of the `pg_failover_slots.standby_slot_names` have to
 confirm before we send data through the logical replication
 slots. Setting -1 (the default) means to wait for all entries in
 `pg_failover_slots.standby_slot_names`.
+
+
+## Release notes
+
+### v1.0.1
+
+Version 1.0.1 fixes several compatibility bugs.
+
+- Fix support for PG13 and older
+
+  The missing interfaces caused either disconnects or outright crashes on PG13
+  and older.
+
+- Test compatibility improvements
+
+  Tests now work on PG11, and are more resilient to testing on slower machines.
+
+- PG16 compatibility improvements
+
+- Various minor cleanups
