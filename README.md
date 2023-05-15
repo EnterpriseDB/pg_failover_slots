@@ -15,15 +15,15 @@ PostgreSQL 11 or higher is required.
 
 The slots are not synchronized to the standby immediately, because of
 consistency reasons. The standby can be too behind logical slots, or too ahead
-of logical slots on primary when the pg_failover_slots extension is activated,
-so the extension does verification and only synchronizes slots when it's
+of logical slots on primary when the pg_failover_slots module is activated,
+so the module does verification and only synchronizes slots when it's
 actually safe.
 
 This, however brings a need to verify that the slots are synchronized and
 that the standby is actually ready to be a failover target with consistent
 logical decoding for all slots. This only needs to be done initially, once
 the slots are synchronized the first time, they will always be consistent as
-long as the extension is active in the cluster.
+long as the module is active in the cluster.
 
 The check for whether slots are fully synchronized with primary is relatively
 simple. The slots just need to be present in `pg_replication_slots` view on
@@ -61,7 +61,7 @@ for failover without losing logical decoding state for any of them.
 
 ## Prerequisite settings
 
-The extension throws hard errors if the following settings are not adjusted:
+The module throws hard errors if the following settings are not adjusted:
 
 - `hot_standby_feedback` should be `on`
 - `primary_slot_name` should be non-empty
@@ -71,7 +71,7 @@ catalog_xmin separately over hot_standby_feedback.
 
 ## Configuration options
 
-The extension itself must be added to `shared_preload_libraries` on both the
+The module itself must be added to `shared_preload_libraries` on both the
 primary instance as well as any standby that is used for high availability
 (failover or switchover) purposes.
 
