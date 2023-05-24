@@ -60,7 +60,7 @@
 #include "libpq/auth.h"
 #include "libpq/libpq.h"
 
-#define PG_FAILOVER_SLOTS_VERSION "1.0.0"
+#define PG_FAILOVER_SLOTS_VERSION "1.0.1"
 
 PG_MODULE_MAGIC;
 
@@ -936,7 +936,6 @@ synchronize_failover_slots(long sleep_time)
 		for (i = 0; i < max_replication_slots; i++)
 		{
 			ReplicationSlot *s = &ReplicationSlotCtl->replication_slots[i];
-			ListCell *lc;
 			bool active;
 			bool found = false;
 
