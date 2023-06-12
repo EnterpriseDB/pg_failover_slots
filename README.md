@@ -1,4 +1,4 @@
-# pg_failover_slots
+# foslots
 
 PG Failover Slots is for anyone with Logical Replication Slots on Postgres databases that are also part of a Physical Streaming Replication architecture.
 
@@ -9,7 +9,7 @@ Since logical replication slots are only maintained on the primary node, downstr
 - Periodically synchronizes the position of slots on the standby based on the primary
 - Ensures that selected standbys receive data before any of the logical slot walsenders can send data to consumers
 
-PostgreSQL 11 or higher is required.
+PostgreSQL 15 or higher is required.
 
 ## How to check the standby is ready
 
@@ -169,22 +169,3 @@ confirm before we send data through the logical replication
 slots. Setting -1 (the default) means to wait for all entries in
 `pg_failover_slots.standby_slot_names`.
 
-
-## Release notes
-
-### v1.0.1
-
-Version 1.0.1 fixes several compatibility bugs.
-
-- Fix support for PG13 and older
-
-  The missing interfaces caused either disconnects or outright crashes on PG13
-  and older.
-
-- Test compatibility improvements
-
-  Tests now work on PG11, and are more resilient to testing on slower machines.
-
-- PG16 compatibility improvements
-
-- Various minor cleanups
