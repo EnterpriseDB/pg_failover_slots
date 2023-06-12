@@ -945,6 +945,10 @@ synchronize_failover_slots(long sleep_time)
 			if (!s->in_use || active)
 				continue;
 
+			/* Only check for logical slots. */
+			if (SlotIsPhysical(s))
+				continue;
+
 			/* Try to find slot in slots returned by primary. */
 			foreach (lc, slots)
 			{

@@ -1,0 +1,40 @@
+env:
+  DEBIAN_FRONTEND: noninteractive
+  LANG: C
+
+task:
+  name: Linux (Debian/Ubuntu)
+  matrix:
+    - container:
+        image: ubuntu:22.04
+  env:
+    matrix:
+      - PGVERSION: 15
+      - PGVERSION: 14
+      - PGVERSION: 13
+      - PGVERSION: 12
+      - PGVERSION: 11
+  setup_script:
+    - apt-get update
+    - apt-get -y install curl gnupg lsb-release
+    - curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
+    - echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" | tee /etc/apt/sources.list.d/pgdg.list
+    - apt-get update
+    - apt-get -y install gcc make postgresql-$PGVERSION postgresql-server-dev-$PGVERSION libkrb5-dev libipc-run-perl
+    - pg_createcluster --start $PGVERSION test -p 55435 -- -A trust
+    - useradd user
+    - chown -R user .
+  build_script:
+    - PATH=/usr/lib/postgresql/$PGVERSION/bin:$PATH
+    - su user -c "make all"
+    - make install
+  test_script:
+    - PATH=/usr/lib/postgresql/$PGVERSION/bin:$PATH
+    - su user -c "make installcheck"
+  on_failure:
+    testrun_artifacts:
+      paths:
+        - "**/*.log"
+        - "**/*.diffs"
+        - "**/regress_log_*"
+      type: text/plain
