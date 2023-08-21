@@ -874,7 +874,6 @@ static long
 synchronize_failover_slots(long sleep_time)
 {
 	List *slots;
-	uint32 nslots = 0;
 	ListCell *lc;
 	PGconn *conn;
 	XLogRecPtr safe_lsn;
@@ -1056,7 +1055,6 @@ synchronize_failover_slots(long sleep_time)
 			remote_slot->restart_lsn = lsn;
 
 		synchronize_one_slot(remote_slot);
-		nslots++;
 	}
 
 	PQfinish(conn);
