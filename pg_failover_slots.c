@@ -107,6 +107,7 @@ XLogRecPtr standby_slot_names_oldest_flush_lsn = InvalidXLogRecPtr;
 /* Slots to sync */
 char *pg_failover_slots_dsn;
 char *pg_failover_slot_names;
+int pg_failover_slots_sync_timeout;
 static char *pg_failover_slot_names_str = NULL;
 static List *pg_failover_slot_names_list = NIL;
 static bool pg_failover_slots_drop = true;
@@ -539,6 +540,7 @@ wait_for_primary_slot_catchup(ReplicationSlot *slot, RemoteSlot *remote_slot)
 	StringInfoData connstr;
 	TimestampTz cb_wait_start =
 		0; /* first invocation should happen immediately */
+	TimestampTz now = 0;
 
 	elog(
 		LOG,
@@ -619,8 +621,19 @@ wait_for_primary_slot_catchup(ReplicationSlot *slot, RemoteSlot *remote_slot)
 		/*
 		 * Invoke any callbacks that will help move the slots along
 		 */
+		now = GetCurrentTimestamp();
+		if (pg_failover_slots_sync_timeout >= 0 && TimestampDifferenceExceeds(
+				cb_wait_start, now, pg_failover_slots_sync_timeout))
+		{
+			elog(
+					LOG,
+					"Gave up on waiting for remote slot %s lsn and catalog xmin",
+					remote_slot->name);
+			return false;
+		}
+				
 		if (TimestampDifferenceExceeds(
-				cb_wait_start, GetCurrentTimestamp(),
+				cb_wait_start, now,
 				Min(wal_retrieve_retry_interval * 5, PG_WAIT_EXTENSION)))
 		{
 			if (cb_wait_start > 0)
@@ -636,6 +649,7 @@ wait_for_primary_slot_catchup(ReplicationSlot *slot, RemoteSlot *remote_slot)
 			cb_wait_start = GetCurrentTimestamp();
 		}
 
+
 		rc =
 			WaitLatch(MyLatch, WL_LATCH_SET | WL_TIMEOUT | WL_POSTMASTER_DEATH,
 					  wal_retrieve_retry_interval, PG_WAIT_EXTENSION);
@@ -645,6 +659,16 @@ wait_for_primary_slot_catchup(ReplicationSlot *slot, RemoteSlot *remote_slot)
 
 
 		ResetLatch(MyLatch);
+
+		/*
+		 * The user may change pg_failover_slots_sync_timeout, so update it if needed.
+		 */
+		if (ConfigReloadPending)
+		{
+			ConfigReloadPending = false;
+			ProcessConfigFile(PGC_SIGHUP);
+		}
+
 	}
 }
 
@@ -1474,7 +1498,14 @@ _PG_init(void)
 		&pg_failover_slots_dsn, "", PGC_SIGHUP, GUC_SUPERUSER_ONLY, NULL, NULL,
 		NULL);
 
-
+	DefineCustomIntVariable(
+		"pg_failover_slots.sync_timeout",
+		"timeout when waiting for a slot to be persisted",
+		"If set to -1 (the default), we wait forever meaning we could hang up"
+		"up on one slot while other slots are ok to be synced.",
+		&pg_failover_slots_sync_timeout, -1, -1, INT_MAX, PGC_SIGHUP,
+		GUC_UNIT_MS, NULL, NULL, NULL);
+		
 	if (IsBinaryUpgrade)
 		return;
 
