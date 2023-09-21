@@ -105,6 +105,7 @@ XLogRecPtr standby_slot_names_oldest_flush_lsn = InvalidXLogRecPtr;
 
 /* Various configuration */
 int worker_nap_time;
+char *pg_failover_maintenance_db;
 
 /* Slots to sync */
 char *pg_failover_slots_dsn;
@@ -445,6 +446,7 @@ get_database_oid(const char *dbname)
 static void
 make_sync_failover_slots_dsn(StringInfo connstr, char *db_name)
 {
+	Assert(db_name);
 	if (pg_failover_slots_dsn && strlen(pg_failover_slots_dsn) > 0)
 	{
 		if (db_name)
@@ -456,8 +458,7 @@ make_sync_failover_slots_dsn(StringInfo connstr, char *db_name)
 	else
 	{
 		Assert(WalRcv);
-		appendStringInfo(connstr, "%s dbname=%s", WalRcv->conninfo,
-						 db_name ? db_name : "postgres");
+		appendStringInfo(connstr, "%s dbname=%s", WalRcv->conninfo, db_name);
 	}
 }
 
@@ -901,7 +902,7 @@ synchronize_failover_slots(long sleep_time)
 	elog(DEBUG1, "starting replication slot synchronization from primary");
 
 	initStringInfo(&connstr);
-	make_sync_failover_slots_dsn(&connstr, NULL /* Use default db name */);
+	make_sync_failover_slots_dsn(&connstr, pg_failover_maintenance_db);
 	conn = remote_connect(connstr.data, "pg_failover_slots");
 
 	/*
@@ -1480,6 +1481,14 @@ _PG_init(void)
 		NULL,
 		&worker_nap_time, 60000, 1000, INT_MAX, PGC_SIGHUP,
 		GUC_SUPERUSER_ONLY | GUC_UNIT_MS, NULL, NULL, NULL);
+
+	DefineCustomStringVariable(
+		"pg_failover_slots.maintenance_db",
+		"Database to connect to when using the primary_conninfo",
+		"When connecting to the primary using the primary_conninfo instead of a specifically set "
+		"pg_failover_slots.primary_dsn, use this datbase to query the pg_replication_slots view.",
+		&pg_failover_maintenance_db, "postgres", PGC_SIGHUP, GUC_SUPERUSER_ONLY,
+		NULL, NULL, NULL);
 
 
 	if (IsBinaryUpgrade)
