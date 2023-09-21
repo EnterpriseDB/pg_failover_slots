@@ -169,6 +169,15 @@ confirm before we send data through the logical replication
 slots. Setting -1 (the default) means to wait for all entries in
 `pg_failover_slots.standby_slot_names`.
 
+### pg_failover_slots.worker_nap_time
+
+Time to sleep (in ms) between two synchronisation attempts. Defaults to 60s.
+
+### pg_failover_slots.maintenance_db
+
+Database name to use when using primary_conninfo to connect to the primary server and fetch the replication slots list.
+Defaults to `postgres`.
+
 
 ## Release notes
 
