@@ -1293,8 +1293,8 @@ wait_for_standby_confirmation(XLogRecPtr commit_lsn)
 		}
 
 		/*
-		 * The user might clear bdr.standby_slot_name or change it to a new
-		 * standby. If we don't notice, we'll keep looping indefinitely here,
+		 * The user might modify or clear pg_failover_slots.standby_slot_names.
+		 * If we don't notice, we'll keep looping indefinitely here,
 		 * so we have to check for config changes.
 		 */
 		if (ConfigReloadPending)
