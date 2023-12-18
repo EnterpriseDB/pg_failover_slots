@@ -70,7 +70,6 @@ PG_MODULE_MAGIC;
 #endif
 
 #define EXTENSION_NAME "pg_failover_slots"
-#define WORKER_NAP_TIME 60000L
 #define WORKER_WAIT_FEEDBACK 10000L
 
 typedef struct RemoteSlot
@@ -103,6 +102,10 @@ static char *standby_slot_names_string = NULL;
 List *standby_slot_names = NIL;
 int standby_slots_min_confirmed;
 XLogRecPtr standby_slot_names_oldest_flush_lsn = InvalidXLogRecPtr;
+
+/* Various configuration */
+int worker_nap_time;
+char *pg_failover_maintenance_db;
 
 /* Slots to sync */
 char *pg_failover_slots_dsn;
@@ -443,6 +446,7 @@ get_database_oid(const char *dbname)
 static void
 make_sync_failover_slots_dsn(StringInfo connstr, char *db_name)
 {
+	Assert(db_name);
 	if (pg_failover_slots_dsn && strlen(pg_failover_slots_dsn) > 0)
 	{
 		if (db_name)
@@ -454,8 +458,7 @@ make_sync_failover_slots_dsn(StringInfo connstr, char *db_name)
 	else
 	{
 		Assert(WalRcv);
-		appendStringInfo(connstr, "%s dbname=%s", WalRcv->conninfo,
-						 db_name ? db_name : "postgres");
+		appendStringInfo(connstr, "%s dbname=%s", WalRcv->conninfo, db_name);
 	}
 }
 
@@ -899,7 +902,7 @@ synchronize_failover_slots(long sleep_time)
 	elog(DEBUG1, "starting replication slot synchronization from primary");
 
 	initStringInfo(&connstr);
-	make_sync_failover_slots_dsn(&connstr, NULL /* Use default db name */);
+	make_sync_failover_slots_dsn(&connstr, pg_failover_maintenance_db);
 	conn = remote_connect(connstr.data, "pg_failover_slots");
 
 	/*
@@ -1089,14 +1092,14 @@ pg_failover_slots_main(Datum main_arg)
 	while (true)
 	{
 		int rc;
-		long sleep_time = WORKER_NAP_TIME;
+		long sleep_time = worker_nap_time;
 
 		CHECK_FOR_INTERRUPTS();
 
 		if (RecoveryInProgress())
-			sleep_time = synchronize_failover_slots(WORKER_NAP_TIME);
+			sleep_time = synchronize_failover_slots(worker_nap_time);
 		else
-			sleep_time = WORKER_NAP_TIME * 10;
+			sleep_time = worker_nap_time * 10;
 
 		rc =
 			WaitLatch(MyLatch, WL_LATCH_SET | WL_TIMEOUT | WL_POSTMASTER_DEATH,
@@ -1471,6 +1474,21 @@ _PG_init(void)
 		"if empty, uses the defaults to primary_conninfo",
 		&pg_failover_slots_dsn, "", PGC_SIGHUP, GUC_SUPERUSER_ONLY, NULL, NULL,
 		NULL);
+
+	DefineCustomIntVariable(
+		"pg_failover_slots.worker_nap_time",
+		"Time to sleep between two synchronisation attempts.",
+		NULL,
+		&worker_nap_time, 60000, 1000, INT_MAX, PGC_SIGHUP,
+		GUC_SUPERUSER_ONLY | GUC_UNIT_MS, NULL, NULL, NULL);
+
+	DefineCustomStringVariable(
+		"pg_failover_slots.maintenance_db",
+		"Database to connect to when using the primary_conninfo",
+		"When connecting to the primary using the primary_conninfo instead of a specifically set "
+		"pg_failover_slots.primary_dsn, use this datbase to query the pg_replication_slots view.",
+		&pg_failover_maintenance_db, "postgres", PGC_SIGHUP, GUC_SUPERUSER_ONLY,
+		NULL, NULL, NULL);
 
 
 	if (IsBinaryUpgrade)
