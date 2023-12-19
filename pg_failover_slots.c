@@ -82,6 +82,7 @@ typedef struct RemoteSlot
 	XLogRecPtr restart_lsn;
 	XLogRecPtr confirmed_lsn;
 	TransactionId catalog_xmin;
+	bool active;
 } RemoteSlot;
 
 typedef enum FailoverSlotFilterKey
@@ -268,7 +269,7 @@ remote_get_primary_slot_info(PGconn *conn, List *slot_filter)
 	{
 		appendStringInfoString(
 			&query,
-			"SELECT slot_name, plugin, database, two_phase, catalog_xmin, restart_lsn, confirmed_flush_lsn"
+			"SELECT slot_name, plugin, database, two_phase, active, catalog_xmin, restart_lsn, confirmed_flush_lsn"
 			"  FROM pg_catalog.pg_replication_slots"
 			" WHERE database IS NOT NULL AND (");
 	}
@@ -276,7 +277,7 @@ remote_get_primary_slot_info(PGconn *conn, List *slot_filter)
 	{
 		appendStringInfoString(
 			&query,
-			"SELECT slot_name, plugin, database, false AS two_phase, catalog_xmin, restart_lsn, confirmed_flush_lsn"
+			"SELECT slot_name, plugin, database, false AS two_phase, active, catalog_xmin, restart_lsn, confirmed_flush_lsn"
 			"  FROM pg_catalog.pg_replication_slots"
 			" WHERE database IS NOT NULL AND (");
 	}
@@ -341,6 +342,7 @@ remote_get_primary_slot_info(PGconn *conn, List *slot_filter)
 					pg_lsn_in, CStringGetDatum(PQgetvalue(res, i, 6)))) :
 				InvalidXLogRecPtr;
 
+		parse_bool(PQgetvalue(res, i, 7), &slot->active);
 		slots = lappend(slots, slot);
 	}
 
@@ -539,6 +541,13 @@ wait_for_primary_slot_catchup(ReplicationSlot *slot, RemoteSlot *remote_slot)
 	StringInfoData connstr;
 	TimestampTz cb_wait_start =
 		0; /* first invocation should happen immediately */
+
+	/*
+	 * Do not wait if the slot is inactive. We never know how long it will take
+	 * for the inactive slot to advance.
+	 */
+	if (!remote_slot->active)
+		return false;
 
 	elog(
 		LOG,
