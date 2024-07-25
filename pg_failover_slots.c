@@ -766,7 +766,10 @@ synchronize_one_slot(RemoteSlot *remote_slot)
 		 * We have to create the slot to reserve its name and resources, but
 		 * don't want it to persist if we fail.
 		 */
-#if PG_VERSION_NUM >= 140000
+#if PG_VERSION_NUM >= 170000
+		ReplicationSlotCreate(remote_slot->name, true, RS_EPHEMERAL,
+							  remote_slot->two_phase, false, false);
+#elif PG_VERSION_NUM >= 140000
 		ReplicationSlotCreate(remote_slot->name, true, RS_EPHEMERAL,
 							  remote_slot->two_phase);
 #else
