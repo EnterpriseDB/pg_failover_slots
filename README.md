@@ -181,6 +181,27 @@ Defaults to `postgres`.
 
 ## Release notes
 
+### v1.1.0
+
+Version 1.1.0 contains bug fixes, enhanced configurability, and
+support for the most recent PostgreSQL major version.
+
+- Add support for PostgreSQL 17
+
+- Bug fix: Do not drop physical slots on standby
+
+  It would previously also drop physical replication slots on the
+  standby if they did not exist on the primary.  This was never the
+  intention.  Now it only touches logical replication slots.
+
+- New configuration setting: `pg_failover_slots.maintenance_db`
+
+  This value was previously hardcoded.
+
+- New configuration setting: `pg_failover_slots.worker_nap_time`
+
+  This value was previously hardcoded.
+
 ### v1.0.1
 
 Version 1.0.1 fixes several compatibility bugs.
