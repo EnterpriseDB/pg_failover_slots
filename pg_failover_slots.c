@@ -1164,7 +1164,7 @@ skip_standby_slot_names(XLogRecPtr commit_lsn)
 	 * skip checks entirely. The assignment hook for
 	 * pg_failover_slots.standby_slot_names invalidates the cache.
 	 */
-	if (standby_slot_names_oldest_flush_lsn >= commit_lsn ||
+	if (standby_slot_names_oldest_flush_lsn > commit_lsn ||
 		standby_slots_min_confirmed == 0 ||
 		list_length(standby_slot_names) == 0)
 		return true;
@@ -1247,7 +1247,7 @@ wait_for_standby_confirmation(XLogRecPtr commit_lsn)
 				oldest_flush_pos > flush_pos)
 				oldest_flush_pos = flush_pos;
 
-			if (flush_pos >= commit_lsn && wait_slots_remaining > 0)
+			if (flush_pos > commit_lsn && wait_slots_remaining > 0)
 				wait_slots_remaining--;
 		}
 		LWLockRelease(ReplicationSlotControlLock);
