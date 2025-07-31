@@ -109,6 +109,10 @@ not found on the primary using the `pg_failover_slots.synchronize_slot_names` fi
 If it's set to true (which is the default), they will be dropped, otherwise
 they will be kept.
 
+If you are using the standby for logical decoding (as a publisher), you should
+probably disable this setting. pg_failover_slots might remove a logical
+replication slot if there is a momentary disconnection.
+
 ### pg_failover_slots.primary_dsn
 
 A standby option for specifying the connection string to use to connect to the
