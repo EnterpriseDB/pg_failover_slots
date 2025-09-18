@@ -99,22 +99,22 @@ typedef struct FailoverSlotFilter
 /* Used for physical-before-logical ordering */
 static char *standby_slot_names_raw;
 static char *standby_slot_names_string = NULL;
-List *standby_slot_names = NIL;
-int standby_slots_min_confirmed;
-XLogRecPtr standby_slot_names_oldest_flush_lsn = InvalidXLogRecPtr;
+static List *standby_slot_names = NIL;
+static int standby_slots_min_confirmed;
+static XLogRecPtr standby_slot_names_oldest_flush_lsn = InvalidXLogRecPtr;
 
 /* Various configuration */
-int worker_nap_time;
-char *pg_failover_maintenance_db;
+static int worker_nap_time;
+static char *pg_failover_maintenance_db;
 
 /* Slots to sync */
-char *pg_failover_slots_dsn;
-char *pg_failover_slot_names;
+static char *pg_failover_slots_dsn;
+static char *pg_failover_slot_names;
 static char *pg_failover_slot_names_str = NULL;
 static List *pg_failover_slot_names_list = NIL;
 static bool pg_failover_slots_drop = true;
 
-char *pg_failover_slots_version_str;
+static char *pg_failover_slots_version_str;
 
 void _PG_init(void);
 PGDLLEXPORT void pg_failover_slots_main(Datum main_arg);
