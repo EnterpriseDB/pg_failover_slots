@@ -60,7 +60,7 @@
 #include "libpq/auth.h"
 #include "libpq/libpq.h"
 
-#define PG_FAILOVER_SLOTS_VERSION "1.1.0"
+#define PG_FAILOVER_SLOTS_VERSION "1.2.0"
 
 PG_MODULE_MAGIC;
 

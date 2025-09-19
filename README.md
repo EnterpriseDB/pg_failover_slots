@@ -185,6 +185,15 @@ Defaults to `postgres`.
 
 ## Release notes
 
+### v1.2.0
+
+Version 1.2.0 contains support for the most recent PostgreSQL major
+version.
+
+- Add support for PostgreSQL 18
+
+- Augment the documentation of `pg_failover_slots.drop_extra_slots`
+
 ### v1.1.0
 
 Version 1.1.0 contains bug fixes, enhanced configurability, and
