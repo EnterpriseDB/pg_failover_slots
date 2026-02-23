@@ -794,12 +794,14 @@ synchronize_one_slot(RemoteSlot *remote_slot)
 		 */
 		ReplicationSlotReserveWal();
 
+		LWLockAcquire(ReplicationSlotControlLock, LW_EXCLUSIVE);
 		LWLockAcquire(ProcArrayLock, LW_EXCLUSIVE);
 		xmin_horizon = GetOldestSafeDecodingTransactionId(true);
 		slot->effective_catalog_xmin = xmin_horizon;
 		slot->data.catalog_xmin = xmin_horizon;
 		ReplicationSlotsComputeRequiredXmin(true);
 		LWLockRelease(ProcArrayLock);
+		LWLockRelease(ReplicationSlotControlLock);
 
 		/*
 		 * Our xmin and/or catalog_xmin may be > that required by one or more
