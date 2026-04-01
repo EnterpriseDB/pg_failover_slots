@@ -950,7 +950,11 @@ synchronize_failover_slots(long sleep_time)
 			bool active;
 			bool found = false;
 
+#if PG_VERSION_NUM >= 190000
+			active = (s->active_proc != 0);
+#else
 			active = (s->active_pid != 0);
+#endif
 
 			/* Only check inactive slots. */
 			if (!s->in_use || active)
