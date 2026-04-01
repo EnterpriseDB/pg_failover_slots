@@ -390,7 +390,7 @@ remote_get_physical_slot_lsn(PGconn *conn, const char *slot_name)
  * without db connection.
  */
 static Oid
-get_database_oid(const char *dbname)
+get_db_oid(const char *dbname)
 {
 	HeapTuple tuple;
 	Relation relation;
@@ -782,7 +782,7 @@ synchronize_one_slot(RemoteSlot *remote_slot)
 		slot = MyReplicationSlot;
 
 		SpinLockAcquire(&slot->mutex);
-		slot->data.database = get_database_oid(remote_slot->database);
+		slot->data.database = get_db_oid(remote_slot->database);
 		strlcpy(NameStr(slot->data.plugin), remote_slot->plugin, NAMEDATALEN);
 		SpinLockRelease(&slot->mutex);
 
