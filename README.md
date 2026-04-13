@@ -185,6 +185,13 @@ Defaults to `postgres`.
 
 ## Release notes
 
+
+### v1.2.1
+
+Version 1.2.1 contains a bug fix.
+
+- Acquire a lock on ReplicationSlotControlLock to avoid an assert failure.
+
 ### v1.2.0
 
 Version 1.2.0 contains support for the most recent PostgreSQL major
