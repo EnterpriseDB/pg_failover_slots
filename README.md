@@ -186,6 +186,13 @@ Defaults to `postgres`.
 ## Release notes
 
 
+### v1.2.2
+
+Version 1.2.2 contains a packaging fix.
+
+ - Create a new release because the last release (1.2.1) points to the
+   incorrect commit.
+
 ### v1.2.1
 
 Version 1.2.1 contains a bug fix.
