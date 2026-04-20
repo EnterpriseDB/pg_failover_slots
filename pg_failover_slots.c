@@ -1082,6 +1082,9 @@ synchronize_failover_slots(long sleep_time)
 void
 pg_failover_slots_main(Datum main_arg)
 {
+	MemoryContext per_loop_ctx = AllocSetContextCreate(CurrentMemoryContext,
+			"pg_failover_slots memorycontext",
+			ALLOCSET_DEFAULT_SIZES);
 	/* Establish signal handlers. */
 	pqsignal(SIGUSR1, procsignal_sigusr1_handler);
 	pqsignal(SIGTERM, die);
@@ -1102,8 +1105,11 @@ pg_failover_slots_main(Datum main_arg)
 	{
 		int rc;
 		long sleep_time = worker_nap_time;
+		MemoryContext oldctx;
 
 		CHECK_FOR_INTERRUPTS();
+
+		oldctx = MemoryContextSwitchTo(per_loop_ctx);
 
 		if (RecoveryInProgress())
 			sleep_time = synchronize_failover_slots(worker_nap_time);
@@ -1126,6 +1132,8 @@ pg_failover_slots_main(Datum main_arg)
 			ConfigReloadPending = false;
 			ProcessConfigFile(PGC_SIGHUP);
 		}
+		MemoryContextSwitchTo(oldctx);
+		MemoryContextReset(per_loop_ctx);
 	}
 }
 
