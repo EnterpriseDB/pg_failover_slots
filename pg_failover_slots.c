@@ -390,7 +390,7 @@ remote_get_physical_slot_lsn(PGconn *conn, const char *slot_name)
  * without db connection.
  */
 static Oid
-get_database_oid(const char *dbname)
+pgfs_get_database_oid(const char *dbname)
 {
 	HeapTuple tuple;
 	Relation relation;
@@ -770,7 +770,10 @@ synchronize_one_slot(RemoteSlot *remote_slot)
 		 * We have to create the slot to reserve its name and resources, but
 		 * don't want it to persist if we fail.
 		 */
-#if PG_VERSION_NUM >= 170000
+#if PG_VERSION_NUM >= 190000
+		ReplicationSlotCreate(remote_slot->name, true, RS_EPHEMERAL,
+							  remote_slot->two_phase, false, false, false);
+#elif PG_VERSION_NUM >= 170000
 		ReplicationSlotCreate(remote_slot->name, true, RS_EPHEMERAL,
 							  remote_slot->two_phase, false, false);
 #elif PG_VERSION_NUM >= 140000
@@ -782,7 +785,7 @@ synchronize_one_slot(RemoteSlot *remote_slot)
 		slot = MyReplicationSlot;
 
 		SpinLockAcquire(&slot->mutex);
-		slot->data.database = get_database_oid(remote_slot->database);
+		slot->data.database = pgfs_get_database_oid(remote_slot->database);
 		strlcpy(NameStr(slot->data.plugin), remote_slot->plugin, NAMEDATALEN);
 		SpinLockRelease(&slot->mutex);
 
@@ -950,7 +953,11 @@ synchronize_failover_slots(long sleep_time)
 			bool active;
 			bool found = false;
 
+#if PG_VERSION_NUM >= 190000
+			active = (s->active_proc != INVALID_PROC_NUMBER);
+#else
 			active = (s->active_pid != 0);
+#endif
 
 			/* Only check inactive slots. */
 			if (!s->in_use || active)
