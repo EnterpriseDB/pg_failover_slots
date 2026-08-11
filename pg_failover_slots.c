@@ -542,6 +542,12 @@ wait_for_primary_slot_catchup(ReplicationSlot *slot, RemoteSlot *remote_slot)
 	StringInfoData connstr;
 	TimestampTz cb_wait_start =
 		0; /* first invocation should happen immediately */
+	/*
+	 * How often to report that we're still waiting.  One message per five
+	 * polls of the primary shows movement without flooding the log.
+	 */
+	int log_interval = Min((int64) wal_retrieve_retry_interval * 5,
+								 (int64) INT_MAX);
 
 	elog(
 		LOG,
@@ -620,11 +626,11 @@ wait_for_primary_slot_catchup(ReplicationSlot *slot, RemoteSlot *remote_slot)
 		}
 
 		/*
-		 * Invoke any callbacks that will help move the slots along
+		 * Report progress periodically so a long wait doesn't look like a
+		 * hang.
 		 */
-		if (TimestampDifferenceExceeds(
-				cb_wait_start, GetCurrentTimestamp(),
-				Min(wal_retrieve_retry_interval * 5, PG_WAIT_EXTENSION)))
+		if (TimestampDifferenceExceeds(cb_wait_start, GetCurrentTimestamp(),
+									   log_interval))
 		{
 			if (cb_wait_start > 0)
 				elog(
