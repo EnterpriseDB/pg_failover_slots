@@ -14,6 +14,8 @@ $node_primary->init(allows_streaming => 'logical');
 $node_primary->append_conf('postgresql.conf', "shared_preload_libraries = pg_failover_slots");
 # Setup physical before logical slot
 $node_primary->append_conf('postgresql.conf', "pg_failover_slots.standby_slot_names = 'standby_1'");
+# The wait for standby_slot_names is bounded by wal_sender_timeout
+$node_primary->append_conf('postgresql.conf', "wal_sender_timeout = 10s");
 
 $node_primary->start;
 is( $node_primary->psql(
