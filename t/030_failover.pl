@@ -26,6 +26,8 @@ my $node_standby = PostgreSQL::Test::Cluster->new('standby_1');
 $node_standby->init_from_backup($node_primary, $backup_name,
         has_streaming => 1);
 $node_standby->append_conf('postgresql.conf', 'hot_standby_feedback = on');
+$node_standby->append_conf('postgresql.conf',
+	'pg_failover_slots.worker_nap_time = 1s');
 
 my $pg_version = `pg_config --version | awk '{print \$2}'`;
 if ($pg_version >= 12) {
@@ -34,6 +36,7 @@ if ($pg_version >= 12) {
 else {
 	$node_standby->append_conf('recovery.conf', 'primary_slot_name = standby_1');
 }
+
 $node_standby->start;
 
 # Wait for the sync worker to start
@@ -67,6 +70,14 @@ while (1) {
 	]);
 
 	$node_primary->safe_psql('postgres', "INSERT INTO test_repl_stat DEFAULT VALUES;");
+
+	# Move restart_lsn to avoid waiting for bgwriter
+	if ($pg_version >= 16) {
+		$node_primary->safe_psql('postgres', 'SELECT pg_log_standby_snapshot()');
+	}
+	else {
+		$node_primary->safe_psql('postgres', 'CHECKPOINT');
+	}
 
 	last if ($node_standby->safe_psql('postgres',"SELECT count(*) > 3 FROM pg_replication_slots WHERE NOT active") eq "t");
 
